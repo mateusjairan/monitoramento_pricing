@@ -12,6 +12,10 @@ import json
 import os
 from datetime import datetime
 from typing import Optional
+from zoneinfo import ZoneInfo
+
+# Timezone de Brasília
+BR_TZ = ZoneInfo("America/Sao_Paulo")
 
 # Importa a função de scraping do módulo existente
 from scraper_core import scrape_by_eans
@@ -22,8 +26,8 @@ MAX_HISTORICO = 30  # Máximo de pontos de histórico por produto
 
 
 def log(message: str):
-    """Função de log com timestamp."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """Função de log com timestamp no horário de Brasília."""
+    timestamp = datetime.now(BR_TZ).strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {message}")
 
 
@@ -117,7 +121,7 @@ def adicionar_ao_historico(produto: dict, preco: float):
         produto['historico'] = []
     
     novo_ponto = {
-        "data": datetime.now().isoformat(),
+        "data": datetime.now(BR_TZ).isoformat(),
         "preco": preco
     }
     
@@ -158,7 +162,7 @@ def atualizar_produtos():
         log(f"ERRO CRÍTICO ao chamar o scraper: {e}")
         for produto in produtos:
             produto['status'] = 'Erro'
-            produto['ultima_verificacao'] = datetime.now().isoformat()
+            produto['ultima_verificacao'] = datetime.now(BR_TZ).isoformat()
         salvar_produtos(produtos)
         return
     
@@ -196,13 +200,13 @@ def atualizar_produtos():
         if not resultado:
             log(f"  -> EAN {ean} não encontrado nos resultados.")
             produto['status'] = 'Não Encontrado'
-            produto['ultima_verificacao'] = datetime.now().isoformat()
+            produto['ultima_verificacao'] = datetime.now(BR_TZ).isoformat()
             continue
         
         if resultado.get('is_not_found'):
             log(f"  -> EAN {ean} marcado como não encontrado pelo scraper.")
             produto['status'] = 'Não Encontrado'
-            produto['ultima_verificacao'] = datetime.now().isoformat()
+            produto['ultima_verificacao'] = datetime.now(BR_TZ).isoformat()
             continue
         
         # Extrai preço e nome
@@ -221,7 +225,7 @@ def atualizar_produtos():
             # Atualiza preços
             produto['preco_anterior'] = preco_anterior
             produto['preco_atual'] = novo_preco
-            produto['ultima_verificacao'] = datetime.now().isoformat()
+            produto['ultima_verificacao'] = datetime.now(BR_TZ).isoformat()
             produto['status'] = 'Monitorando'
             
             # Adiciona ao histórico
@@ -244,7 +248,7 @@ def atualizar_produtos():
         else:
             log(f"  -> Não foi possível extrair o preço.")
             produto['status'] = 'Erro'
-            produto['ultima_verificacao'] = datetime.now().isoformat()
+            produto['ultima_verificacao'] = datetime.now(BR_TZ).isoformat()
     
     # Salva os produtos atualizados
     salvar_produtos(produtos)
