@@ -1,0 +1,37 @@
+name: Monitoramento de Preços
+
+on:
+  # Executa a cada 6 horas
+  schedule:
+    - cron: '0 */6 * * *'
+  
+  # Permite execução manual
+  workflow_dispatch:
+
+jobs:
+  atualizar-precos:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+      
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Instalar dependências
+        run: |
+          pip install requests pandas openpyxl
+      
+      - name: Executar atualizador
+        run: python atualizador.py
+      
+      - name: Commit e push das alterações
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add produtos.json
+          git diff --staged --quiet || git commit -m "🔄 Atualização automática de preços - $(date +'%Y-%m-%d %H:%M')"
+          git push

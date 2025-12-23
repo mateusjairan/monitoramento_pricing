@@ -1,0 +1,419 @@
+import streamlit as st
+import pandas as pd
+import json
+import os
+import subprocess
+import io
+from datetime import datetime
+import plotly.express as px
+
+# --- CONFIGURAÇÕES ---
+PRODUTOS_FILE = "produtos.json"
+
+# --- FUNÇÕES DE PERSISTÊNCIA ---
+def carregar_produtos() -> list:
+    """Carrega a lista de produtos do arquivo JSON."""
+    if not os.path.exists(PRODUTOS_FILE):
+        return []
+    try:
+        with open(PRODUTOS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data.get("produtos", [])
+    except (json.JSONDecodeError, IOError):
+        return []
+
+def salvar_produtos(produtos: list):
+    """Salva a lista de produtos no arquivo JSON."""
+    with open(PRODUTOS_FILE, 'w', encoding='utf-8') as f:
+        json.dump({"produtos": produtos}, f, ensure_ascii=False, indent=2)
+
+def adicionar_produto(ean: str) -> tuple[bool, str]:
+    """Adiciona um novo produto à lista de monitoramento."""
+    produtos = carregar_produtos()
+    
+    if any(p['ean'] == ean for p in produtos):
+        return False, f"O EAN {ean} já está sendo monitorado."
+    
+    novo_produto = {
+        "ean": ean,
+        "nome": "",
+        "preco_atual": None,
+        "preco_anterior": None,
+        "variacao": None,
+        "ultima_verificacao": None,
+        "status": "Pendente",
+        "historico": []
+    }
+    
+    produtos.append(novo_produto)
+    salvar_produtos(produtos)
+    return True, f"Produto {ean} adicionado com sucesso!"
+
+def adicionar_produtos_em_lote(eans: list[str]) -> tuple[int, int, list[str]]:
+    """Adiciona múltiplos produtos. Retorna (adicionados, duplicados, erros)."""
+    produtos = carregar_produtos()
+    eans_existentes = {p['ean'] for p in produtos}
+    
+    adicionados = 0
+    duplicados = 0
+    erros = []
+    
+    for ean in eans:
+        ean = ean.strip()
+        if not ean:
+            continue
+        if not ean.isdigit():
+            erros.append(f"{ean} (não é numérico)")
+            continue
+        if ean in eans_existentes:
+            duplicados += 1
+            continue
+        
+        novo_produto = {
+            "ean": ean,
+            "nome": "",
+            "preco_atual": None,
+            "preco_anterior": None,
+            "variacao": None,
+            "ultima_verificacao": None,
+            "status": "Pendente",
+            "historico": []
+        }
+        produtos.append(novo_produto)
+        eans_existentes.add(ean)
+        adicionados += 1
+    
+    salvar_produtos(produtos)
+    return adicionados, duplicados, erros
+
+def remover_produto(ean: str) -> bool:
+    """Remove um produto da lista de monitoramento."""
+    produtos = carregar_produtos()
+    produtos_filtrados = [p for p in produtos if p['ean'] != ean]
+    
+    if len(produtos_filtrados) < len(produtos):
+        salvar_produtos(produtos_filtrados)
+        return True
+    return False
+
+def exportar_para_excel(produtos: list) -> bytes:
+    """Exporta a lista de produtos para Excel."""
+    df_data = []
+    for p in produtos:
+        df_data.append({
+            "EAN": p['ean'],
+            "Nome": p.get('nome', ''),
+            "Preço Atual": p.get('preco_atual'),
+            "Preço Anterior": p.get('preco_anterior'),
+            "Variação (%)": p.get('variacao'),
+            "Última Verificação": p.get('ultima_verificacao'),
+            "Status": p.get('status')
+        })
+    
+    df = pd.DataFrame(df_data)
+    output = io.BytesIO()
+    df.to_excel(output, index=False, engine='openpyxl')
+    output.seek(0)
+    return output.getvalue()
+
+# --- CONFIGURAÇÃO DA PÁGINA ---
+st.set_page_config(
+    page_title="Monitor de Preços - Pague Menos",
+    page_icon="💊",
+    layout="wide"
+)
+
+st.title("💊 Monitor de Preços - Pague Menos")
+st.markdown("Ferramenta de pricing para monitorar variações de preços na farmácia Pague Menos.")
+
+# --- BOTÃO DE ATUALIZAÇÃO ---
+col_update, col_space = st.columns([1, 3])
+with col_update:
+    if st.button("🔄 Atualizar Preços", type="primary", use_container_width=True):
+        with st.spinner("Atualizando preços... Isso pode levar alguns segundos."):
+            try:
+                result = subprocess.run(
+                    ["python", "atualizador.py"],
+                    capture_output=True,
+                    text=True,
+                    cwd=os.path.dirname(os.path.abspath(__file__)) or "."
+                )
+                if result.returncode == 0:
+                    st.success("✅ Preços atualizados com sucesso!")
+                    st.rerun()
+                else:
+                    st.error(f"Erro ao atualizar: {result.stderr}")
+            except Exception as e:
+                st.error(f"Erro ao executar atualizador: {e}")
+
+st.divider()
+
+# --- MÉTRICAS ---
+produtos = carregar_produtos()
+
+col1, col2, col3, col4 = st.columns(4)
+
+total_monitorado = len(produtos)
+pendentes = len([p for p in produtos if p['status'] == 'Pendente'])
+preco_subiu = len([p for p in produtos if p.get('variacao') and p['variacao'] > 0])
+preco_desceu = len([p for p in produtos if p.get('variacao') and p['variacao'] < 0])
+
+with col1:
+    st.metric("📦 Total Monitorado", total_monitorado)
+with col2:
+    st.metric("⏳ Pendentes", pendentes)
+with col3:
+    st.metric("📈 Preço Subiu", preco_subiu, delta=f"+{preco_subiu}" if preco_subiu else None, delta_color="inverse")
+with col4:
+    st.metric("📉 Preço Desceu", preco_desceu, delta=f"-{preco_desceu}" if preco_desceu else None, delta_color="normal")
+
+st.divider()
+
+# --- ABAS PRINCIPAIS ---
+tab_tabela, tab_graficos, tab_cadastro = st.tabs(["📋 Tabela de Produtos", "📈 Gráficos", "➕ Cadastrar"])
+
+# === ABA TABELA ===
+with tab_tabela:
+    if not produtos:
+        st.info("Nenhum produto cadastrado ainda. Use a aba 'Cadastrar' para adicionar produtos.")
+    else:
+        # --- FILTROS ---
+        st.subheader("🔍 Filtros")
+        col_filtro1, col_filtro2, col_filtro3 = st.columns(3)
+        
+        with col_filtro1:
+            status_options = ["Todos"] + list(set(p['status'] for p in produtos))
+            filtro_status = st.selectbox("Status", status_options)
+        
+        with col_filtro2:
+            filtro_variacao = st.selectbox("Variação", ["Todos", "📈 Subiu", "📉 Desceu", "➡️ Sem alteração"])
+        
+        with col_filtro3:
+            ordenar_por = st.selectbox("Ordenar por", ["EAN", "Nome", "Maior Variação", "Menor Variação", "Preço Atual"])
+        
+        # Aplica filtros
+        produtos_filtrados = produtos.copy()
+        
+        if filtro_status != "Todos":
+            produtos_filtrados = [p for p in produtos_filtrados if p['status'] == filtro_status]
+        
+        if filtro_variacao == "📈 Subiu":
+            produtos_filtrados = [p for p in produtos_filtrados if p.get('variacao') and p['variacao'] > 0]
+        elif filtro_variacao == "📉 Desceu":
+            produtos_filtrados = [p for p in produtos_filtrados if p.get('variacao') and p['variacao'] < 0]
+        elif filtro_variacao == "➡️ Sem alteração":
+            produtos_filtrados = [p for p in produtos_filtrados if p.get('variacao') == 0]
+        
+        # Aplica ordenação
+        if ordenar_por == "Maior Variação":
+            produtos_filtrados.sort(key=lambda x: x.get('variacao') or 0, reverse=True)
+        elif ordenar_por == "Menor Variação":
+            produtos_filtrados.sort(key=lambda x: x.get('variacao') or 0)
+        elif ordenar_por == "Preço Atual":
+            produtos_filtrados.sort(key=lambda x: x.get('preco_atual') or 0, reverse=True)
+        elif ordenar_por == "Nome":
+            produtos_filtrados.sort(key=lambda x: x.get('nome') or '')
+        
+        st.divider()
+        
+        # --- TABELA ---
+        st.subheader(f"📋 Produtos ({len(produtos_filtrados)} de {len(produtos)})")
+        
+        df_data = []
+        for p in produtos_filtrados:
+            preco_atual = f"R$ {p['preco_atual']:.2f}" if p.get('preco_atual') else "—"
+            preco_anterior = f"R$ {p['preco_anterior']:.2f}" if p.get('preco_anterior') else "—"
+            
+            # Variação com cor
+            variacao_display = "—"
+            if p.get('variacao') is not None:
+                var = p['variacao']
+                if var > 0:
+                    variacao_display = f"📈 +{var:.1f}%"
+                elif var < 0:
+                    variacao_display = f"📉 {var:.1f}%"
+                else:
+                    variacao_display = "➡️ 0%"
+            
+            data_formatada = "—"
+            if p.get('ultima_verificacao'):
+                try:
+                    dt = datetime.fromisoformat(p['ultima_verificacao'])
+                    data_formatada = dt.strftime("%d/%m/%Y %H:%M")
+                except ValueError:
+                    data_formatada = p['ultima_verificacao']
+            
+            status_icons = {"Pendente": "⏳", "Monitorando": "👁️", "Erro": "❌", "Não Encontrado": "❓"}
+            status_display = f"{status_icons.get(p['status'], '')} {p['status']}"
+            
+            df_data.append({
+                "EAN": p['ean'],
+                "Nome": p['nome'] if p['nome'] else "—",
+                "Preço Atual": preco_atual,
+                "Preço Anterior": preco_anterior,
+                "Variação": variacao_display,
+                "Última Verificação": data_formatada,
+                "Status": status_display
+            })
+        
+        df = pd.DataFrame(df_data)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        
+        # --- EXPORTAR EXCEL ---
+        st.divider()
+        col_exp1, col_exp2 = st.columns([1, 3])
+        with col_exp1:
+            excel_bytes = exportar_para_excel(produtos_filtrados)
+            st.download_button(
+                label="📥 Exportar Excel",
+                data=excel_bytes,
+                file_name=f"monitoramento_precos_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
+        
+        # --- REMOVER PRODUTO ---
+        st.divider()
+        st.subheader("🗑️ Remover Produto")
+        
+        col_remove, col_btn = st.columns([3, 1])
+        
+        with col_remove:
+            ean_para_remover = st.selectbox(
+                "Selecione o EAN",
+                options=[p['ean'] for p in produtos],
+                format_func=lambda x: f"{x} - {next((p['nome'] for p in produtos if p['ean'] == x), 'Sem nome')}"
+            )
+        
+        with col_btn:
+            st.write("")
+            st.write("")
+            if st.button("Remover", type="secondary", use_container_width=True):
+                if remover_produto(ean_para_remover):
+                    st.success(f"Produto {ean_para_remover} removido!")
+                    st.rerun()
+
+# === ABA GRÁFICOS ===
+with tab_graficos:
+    produtos_com_historico = [p for p in produtos if p.get('historico') and len(p['historico']) > 0]
+    
+    if not produtos_com_historico:
+        st.info("📊 Nenhum histórico de preços disponível ainda. Execute o atualizador mais vezes para acumular dados.")
+    else:
+        st.subheader("📈 Histórico de Preços")
+        
+        # Seletor de produto
+        produto_selecionado = st.selectbox(
+            "Selecione um produto",
+            options=produtos_com_historico,
+            format_func=lambda x: f"{x['ean']} - {x['nome'] or 'Sem nome'}"
+        )
+        
+        if produto_selecionado and produto_selecionado.get('historico'):
+            historico = produto_selecionado['historico']
+            
+            # Prepara dados para o gráfico
+            df_hist = pd.DataFrame(historico)
+            df_hist['data'] = pd.to_datetime(df_hist['data'])
+            df_hist = df_hist.sort_values('data')
+            
+            # Cria gráfico com Plotly
+            fig = px.line(
+                df_hist, 
+                x='data', 
+                y='preco',
+                title=f"Histórico de Preços: {produto_selecionado['nome'] or produto_selecionado['ean']}",
+                labels={'data': 'Data', 'preco': 'Preço (R$)'},
+                markers=True
+            )
+            fig.update_layout(
+                xaxis_title="Data",
+                yaxis_title="Preço (R$)",
+                hovermode="x unified"
+            )
+            fig.update_traces(line_color='#1f77b4', marker_size=8)
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Estatísticas
+            col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
+            precos = [h['preco'] for h in historico]
+            
+            with col_stat1:
+                st.metric("Preço Atual", f"R$ {precos[-1]:.2f}")
+            with col_stat2:
+                st.metric("Preço Mínimo", f"R$ {min(precos):.2f}")
+            with col_stat3:
+                st.metric("Preço Máximo", f"R$ {max(precos):.2f}")
+            with col_stat4:
+                st.metric("Média", f"R$ {sum(precos)/len(precos):.2f}")
+
+# === ABA CADASTRO ===
+with tab_cadastro:
+    st.subheader("➕ Cadastro Individual")
+    
+    with st.form("form_cadastro", clear_on_submit=True):
+        ean_input = st.text_input(
+            "Código EAN (código de barras)",
+            placeholder="Ex: 7891234567890",
+            max_chars=13
+        )
+        
+        submitted = st.form_submit_button("Cadastrar Produto", use_container_width=True)
+        
+        if submitted:
+            if not ean_input or not ean_input.strip():
+                st.error("Por favor, informe o código EAN.")
+            elif not ean_input.isdigit():
+                st.error("O EAN deve conter apenas números.")
+            else:
+                sucesso, mensagem = adicionar_produto(ean_input.strip())
+                if sucesso:
+                    st.success(mensagem)
+                    st.rerun()
+                else:
+                    st.warning(mensagem)
+    
+    st.divider()
+    
+    # --- CADASTRO EM LOTE ---
+    st.subheader("📁 Cadastro em Lote")
+    st.markdown("Faça upload de um arquivo `.txt` ou `.csv` com um EAN por linha.")
+    
+    uploaded_file = st.file_uploader(
+        "Selecione o arquivo",
+        type=['txt', 'csv'],
+        help="Arquivo com um EAN por linha"
+    )
+    
+    if uploaded_file is not None:
+        try:
+            content = uploaded_file.getvalue().decode('utf-8')
+            eans = content.strip().split('\n')
+            eans = [ean.strip().replace(',', '') for ean in eans if ean.strip()]
+            
+            st.info(f"📋 {len(eans)} EANs encontrados no arquivo")
+            
+            # Preview
+            with st.expander("Ver EANs do arquivo"):
+                st.code('\n'.join(eans[:20]) + ('\n...' if len(eans) > 20 else ''))
+            
+            if st.button("Importar EANs", type="primary"):
+                adicionados, duplicados, erros = adicionar_produtos_em_lote(eans)
+                
+                st.success(f"✅ {adicionados} produtos adicionados")
+                if duplicados > 0:
+                    st.warning(f"⚠️ {duplicados} EANs já existiam e foram ignorados")
+                if erros:
+                    st.error(f"❌ {len(erros)} erros: {', '.join(erros[:5])}")
+                
+                st.rerun()
+                
+        except Exception as e:
+            st.error(f"Erro ao processar arquivo: {e}")
+
+# --- RODAPÉ ---
+st.divider()
+st.caption("💊 Monitor de Preços - Pague Menos | Ferramenta de Pricing")
+
+# Para executar: streamlit run app.py

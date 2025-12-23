@@ -1,0 +1,23 @@
+{
+  "produtos": [
+    {
+      "ean": "7500435146500",
+      "nome": "Fralda Pampers Pants Ajuste Total XXG 60 Unidades",
+      "preco_atual": 149.99,
+      "preco_anterior": 149.99,
+      "variacao": 0.0,
+      "ultima_verificacao": "2025-12-23T13:47:46.077596",
+      "status": "Monitorando",
+      "historico": [
+        {
+          "data": "2025-12-23T13:30:06.781563",
+          "preco": 149.99
+        },
+        {
+          "data": "2025-12-23T13:47:46.077604",
+          "preco": 149.99
+        }
+      ]
+    }
+  ]
+}
