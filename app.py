@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import subprocess
 import io
 from datetime import datetime
 import plotly.express as px
@@ -132,19 +131,13 @@ with col_update:
     if st.button("🔄 Atualizar Preços", type="primary", use_container_width=True):
         with st.spinner("Atualizando preços... Isso pode levar alguns segundos."):
             try:
-                result = subprocess.run(
-                    ["python", "atualizador.py"],
-                    capture_output=True,
-                    text=True,
-                    cwd=os.path.dirname(os.path.abspath(__file__)) or "."
-                )
-                if result.returncode == 0:
-                    st.success("✅ Preços atualizados com sucesso!")
-                    st.rerun()
-                else:
-                    st.error(f"Erro ao atualizar: {result.stderr}")
+                # Importa e executa a função diretamente (funciona no Streamlit Cloud)
+                from atualizador import atualizar_produtos
+                atualizar_produtos()
+                st.success("✅ Preços atualizados com sucesso!")
+                st.rerun()
             except Exception as e:
-                st.error(f"Erro ao executar atualizador: {e}")
+                st.error(f"Erro ao atualizar: {e}")
 
 st.divider()
 
