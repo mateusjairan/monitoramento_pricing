@@ -536,7 +536,7 @@ with tab_graficos:
             historico = produto_selecionado['historico']
             
             df_hist = pd.DataFrame(historico)
-            df_hist['data'] = pd.to_datetime(df_hist['data'])
+            df_hist['data'] = pd.to_datetime(df_hist['data'], format='mixed', utc=True)
             df_hist = df_hist.sort_values('data')
             
             fig = px.line(
