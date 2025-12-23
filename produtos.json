@@ -6,7 +6,7 @@
       "preco_atual": 149.99,
       "preco_anterior": 149.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2025-12-23T17:05:43.186918",
+      "ultima_verificacao": "2025-12-23T14:41:56.521918",
       "status": "Monitorando",
       "historico": [
         {
@@ -20,6 +20,25 @@
         {
           "data": "2025-12-23T17:05:43.186927",
           "preco": 149.99
+        },
+        {
+          "data": "2025-12-23T14:41:56.521943",
+          "preco": 149.99
+        }
+      ]
+    },
+    {
+      "ean": "7891025107859",
+      "nome": "Composto Lácteo Milnutri Premium 400g",
+      "preco_atual": 44.99,
+      "preco_anterior": null,
+      "variacao": null,
+      "ultima_verificacao": "2025-12-23T14:41:56.522499",
+      "status": "Monitorando",
+      "historico": [
+        {
+          "data": "2025-12-23T14:41:56.522513",
+          "preco": 44.99
         }
       ]
     }

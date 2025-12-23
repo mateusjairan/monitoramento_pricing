@@ -9,6 +9,106 @@ import plotly.express as px
 # --- CONFIGURAÇÕES ---
 PRODUTOS_FILE = "produtos.json"
 
+# --- ESTILO CSS CUSTOMIZADO ---
+st.markdown("""
+<style>
+    /* Cores e tema */
+    :root {
+        --primary-color: #667eea;
+        --secondary-color: #764ba2;
+        --success-color: #00c853;
+        --warning-color: #ff9800;
+        --danger-color: #f44336;
+    }
+    
+    /* Cards modernos */
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 16px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    }
+    
+    .metric-card h3 {
+        font-size: 2.5rem;
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .metric-card p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+    
+    /* Formulário estilizado */
+    .stTextInput > div > div > input {
+        border-radius: 12px;
+        border: 2px solid #e0e0e0;
+        padding: 12px 16px;
+        font-size: 1.1rem;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Botões */
+    .stButton > button {
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Tabela */
+    .dataframe {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    /* Header do card de cadastro */
+    .cadastro-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        color: white;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    
+    .cadastro-header h2 {
+        margin: 0;
+        font-size: 1.8rem;
+    }
+    
+    .cadastro-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }
+    
+    /* Badge de status */
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .status-monitorando { background: #e8f5e9; color: #2e7d32; }
+    .status-pendente { background: #fff3e0; color: #ef6c00; }
+    .status-erro { background: #ffebee; color: #c62828; }
+</style>
+""", unsafe_allow_html=True)
+
 # --- FUNÇÕES DE PERSISTÊNCIA ---
 def carregar_produtos() -> list:
     """Carrega a lista de produtos do arquivo JSON."""
@@ -119,11 +219,19 @@ def exportar_para_excel(produtos: list) -> bytes:
 st.set_page_config(
     page_title="Monitor de Preços - Pague Menos",
     page_icon="💊",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-st.title("💊 Monitor de Preços - Pague Menos")
-st.markdown("Ferramenta de pricing para monitorar variações de preços na farmácia Pague Menos.")
+# --- HEADER ---
+st.markdown("""
+<div style="text-align: center; padding: 1rem 0 2rem 0;">
+    <h1 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; margin-bottom: 0.5rem;">
+        💊 Monitor de Preços
+    </h1>
+    <p style="color: #666; font-size: 1.1rem;">Pague Menos • Ferramenta de Pricing Inteligente</p>
+</div>
+""", unsafe_allow_html=True)
 
 # --- BOTÃO DE ATUALIZAÇÃO ---
 col_update, col_space = st.columns([1, 3])
@@ -131,7 +239,6 @@ with col_update:
     if st.button("🔄 Atualizar Preços", type="primary", use_container_width=True):
         with st.spinner("Atualizando preços... Isso pode levar alguns segundos."):
             try:
-                # Importa e executa a função diretamente (funciona no Streamlit Cloud)
                 from atualizador import atualizar_produtos
                 atualizar_produtos()
                 st.success("✅ Preços atualizados com sucesso!")
@@ -139,10 +246,10 @@ with col_update:
             except Exception as e:
                 st.error(f"Erro ao atualizar: {e}")
 
-st.divider()
-
 # --- MÉTRICAS ---
 produtos = carregar_produtos()
+
+st.markdown("---")
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -152,26 +259,151 @@ preco_subiu = len([p for p in produtos if p.get('variacao') and p['variacao'] > 
 preco_desceu = len([p for p in produtos if p.get('variacao') and p['variacao'] < 0])
 
 with col1:
-    st.metric("📦 Total Monitorado", total_monitorado)
-with col2:
-    st.metric("⏳ Pendentes", pendentes)
-with col3:
-    st.metric("📈 Preço Subiu", preco_subiu, delta=f"+{preco_subiu}" if preco_subiu else None, delta_color="inverse")
-with col4:
-    st.metric("📉 Preço Desceu", preco_desceu, delta=f"-{preco_desceu}" if preco_desceu else None, delta_color="normal")
+    st.markdown(f"""
+    <div class="metric-card">
+        <h3>{total_monitorado}</h3>
+        <p>📦 Total Monitorado</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.divider()
+with col2:
+    st.markdown(f"""
+    <div class="metric-card" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+        <h3>{pendentes}</h3>
+        <p>⏳ Pendentes</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="metric-card" style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);">
+        <h3>{preco_subiu}</h3>
+        <p>📈 Preço Subiu</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown(f"""
+    <div class="metric-card" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);">
+        <h3>{preco_desceu}</h3>
+        <p>📉 Preço Desceu</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 # --- ABAS PRINCIPAIS ---
-tab_tabela, tab_graficos, tab_cadastro = st.tabs(["📋 Tabela de Produtos", "📈 Gráficos", "➕ Cadastrar"])
+tab_cadastro, tab_tabela, tab_graficos = st.tabs(["➕ Cadastrar Produtos", "📋 Tabela de Produtos", "📈 Gráficos"])
+
+# === ABA CADASTRO (PRIMEIRA AGORA) ===
+with tab_cadastro:
+    st.markdown("""
+    <div class="cadastro-header">
+        <h2>➕ Adicionar Produtos ao Monitoramento</h2>
+        <p>Cadastre produtos informando o código de barras (EAN)</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Duas colunas para os métodos de cadastro
+    col_individual, col_lote = st.columns(2)
+    
+    # --- CADASTRO INDIVIDUAL ---
+    with col_individual:
+        st.markdown("### 🔢 Cadastro Individual")
+        st.markdown("Digite um código de barras por vez")
+        
+        with st.form("form_cadastro", clear_on_submit=True):
+            ean_input = st.text_input(
+                "Código EAN",
+                placeholder="Ex: 7891234567890",
+                max_chars=13,
+                label_visibility="collapsed"
+            )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            submitted = st.form_submit_button("✅ Cadastrar Produto", use_container_width=True, type="primary")
+            
+            if submitted:
+                if not ean_input or not ean_input.strip():
+                    st.error("❌ Por favor, informe o código EAN.")
+                elif not ean_input.isdigit():
+                    st.error("❌ O EAN deve conter apenas números.")
+                else:
+                    sucesso, mensagem = adicionar_produto(ean_input.strip())
+                    if sucesso:
+                        st.success(f"✅ {mensagem}")
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.warning(f"⚠️ {mensagem}")
+    
+    # --- CADASTRO EM LOTE ---
+    with col_lote:
+        st.markdown("### 📁 Cadastro em Lote")
+        st.markdown("Faça upload de arquivo com múltiplos EANs")
+        
+        uploaded_file = st.file_uploader(
+            "Selecione arquivo .txt ou .csv",
+            type=['txt', 'csv'],
+            help="Um EAN por linha",
+            label_visibility="collapsed"
+        )
+        
+        if uploaded_file is not None:
+            try:
+                content = uploaded_file.getvalue().decode('utf-8')
+                eans = content.strip().split('\n')
+                eans = [ean.strip().replace(',', '') for ean in eans if ean.strip()]
+                
+                st.info(f"📋 **{len(eans)} EANs** encontrados no arquivo")
+                
+                with st.expander("👀 Ver EANs do arquivo"):
+                    st.code('\n'.join(eans[:20]) + ('\n...' if len(eans) > 20 else ''))
+                
+                if st.button("📥 Importar Todos os EANs", type="primary", use_container_width=True):
+                    adicionados, duplicados, erros = adicionar_produtos_em_lote(eans)
+                    
+                    if adicionados > 0:
+                        st.success(f"✅ **{adicionados}** produtos adicionados com sucesso!")
+                        st.balloons()
+                    if duplicados > 0:
+                        st.warning(f"⚠️ **{duplicados}** EANs já existiam e foram ignorados")
+                    if erros:
+                        st.error(f"❌ **{len(erros)}** erros: {', '.join(erros[:5])}")
+                    
+                    st.rerun()
+                    
+            except Exception as e:
+                st.error(f"❌ Erro ao processar arquivo: {e}")
+        else:
+            st.markdown("""
+            <div style="border: 2px dashed #ccc; border-radius: 12px; padding: 2rem; text-align: center; color: #888;">
+                <p style="font-size: 2rem; margin-bottom: 0.5rem;">�</p>
+                <p>Arraste um arquivo aqui ou clique para selecionar</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # --- DICA ---
+    st.markdown("---")
+    st.info("""
+    💡 **Dica:** Após cadastrar os produtos, clique em **"🔄 Atualizar Preços"** no topo da página 
+    para buscar os preços atuais na Pague Menos.
+    """)
 
 # === ABA TABELA ===
 with tab_tabela:
     if not produtos:
-        st.info("Nenhum produto cadastrado ainda. Use a aba 'Cadastrar' para adicionar produtos.")
+        st.markdown("""
+        <div style="text-align: center; padding: 4rem 2rem; background: #f8f9fa; border-radius: 16px;">
+            <p style="font-size: 4rem; margin-bottom: 1rem;">📦</p>
+            <h3>Nenhum produto cadastrado</h3>
+            <p style="color: #666;">Use a aba "Cadastrar Produtos" para adicionar seus primeiros produtos.</p>
+        </div>
+        """, unsafe_allow_html=True)
     else:
         # --- FILTROS ---
-        st.subheader("🔍 Filtros")
+        st.markdown("### 🔍 Filtros")
         col_filtro1, col_filtro2, col_filtro3 = st.columns(3)
         
         with col_filtro1:
@@ -207,17 +439,16 @@ with tab_tabela:
         elif ordenar_por == "Nome":
             produtos_filtrados.sort(key=lambda x: x.get('nome') or '')
         
-        st.divider()
+        st.markdown("---")
         
         # --- TABELA ---
-        st.subheader(f"📋 Produtos ({len(produtos_filtrados)} de {len(produtos)})")
+        st.markdown(f"### 📋 Produtos ({len(produtos_filtrados)} de {len(produtos)})")
         
         df_data = []
         for p in produtos_filtrados:
             preco_atual = f"R$ {p['preco_atual']:.2f}" if p.get('preco_atual') else "—"
             preco_anterior = f"R$ {p['preco_anterior']:.2f}" if p.get('preco_anterior') else "—"
             
-            # Variação com cor
             variacao_display = "—"
             if p.get('variacao') is not None:
                 var = p['variacao']
@@ -252,38 +483,32 @@ with tab_tabela:
         df = pd.DataFrame(df_data)
         st.dataframe(df, use_container_width=True, hide_index=True)
         
-        # --- EXPORTAR EXCEL ---
-        st.divider()
-        col_exp1, col_exp2 = st.columns([1, 3])
-        with col_exp1:
+        # --- AÇÕES ---
+        st.markdown("---")
+        col_exp, col_remove = st.columns(2)
+        
+        with col_exp:
+            st.markdown("### 📥 Exportar Dados")
             excel_bytes = exportar_para_excel(produtos_filtrados)
             st.download_button(
-                label="📥 Exportar Excel",
+                label="📥 Baixar Excel",
                 data=excel_bytes,
                 file_name=f"monitoramento_precos_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
         
-        # --- REMOVER PRODUTO ---
-        st.divider()
-        st.subheader("🗑️ Remover Produto")
-        
-        col_remove, col_btn = st.columns([3, 1])
-        
         with col_remove:
+            st.markdown("### 🗑️ Remover Produto")
             ean_para_remover = st.selectbox(
                 "Selecione o EAN",
                 options=[p['ean'] for p in produtos],
-                format_func=lambda x: f"{x} - {next((p['nome'] for p in produtos if p['ean'] == x), 'Sem nome')}"
+                format_func=lambda x: f"{x} - {next((p['nome'] for p in produtos if p['ean'] == x), 'Sem nome')}",
+                label_visibility="collapsed"
             )
-        
-        with col_btn:
-            st.write("")
-            st.write("")
-            if st.button("Remover", type="secondary", use_container_width=True):
+            if st.button("🗑️ Remover Produto", type="secondary", use_container_width=True):
                 if remover_produto(ean_para_remover):
-                    st.success(f"Produto {ean_para_remover} removido!")
+                    st.success(f"✅ Produto {ean_para_remover} removido!")
                     st.rerun()
 
 # === ABA GRÁFICOS ===
@@ -291,11 +516,16 @@ with tab_graficos:
     produtos_com_historico = [p for p in produtos if p.get('historico') and len(p['historico']) > 0]
     
     if not produtos_com_historico:
-        st.info("📊 Nenhum histórico de preços disponível ainda. Execute o atualizador mais vezes para acumular dados.")
+        st.markdown("""
+        <div style="text-align: center; padding: 4rem 2rem; background: #f8f9fa; border-radius: 16px;">
+            <p style="font-size: 4rem; margin-bottom: 1rem;">📊</p>
+            <h3>Nenhum histórico disponível</h3>
+            <p style="color: #666;">Execute o atualizador mais vezes para acumular dados de histórico.</p>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        st.subheader("📈 Histórico de Preços")
+        st.markdown("### 📈 Histórico de Preços")
         
-        # Seletor de produto
         produto_selecionado = st.selectbox(
             "Selecione um produto",
             options=produtos_com_historico,
@@ -305,26 +535,25 @@ with tab_graficos:
         if produto_selecionado and produto_selecionado.get('historico'):
             historico = produto_selecionado['historico']
             
-            # Prepara dados para o gráfico
             df_hist = pd.DataFrame(historico)
             df_hist['data'] = pd.to_datetime(df_hist['data'])
             df_hist = df_hist.sort_values('data')
             
-            # Cria gráfico com Plotly
             fig = px.line(
                 df_hist, 
                 x='data', 
                 y='preco',
-                title=f"Histórico de Preços: {produto_selecionado['nome'] or produto_selecionado['ean']}",
+                title=f"📈 {produto_selecionado['nome'] or produto_selecionado['ean']}",
                 labels={'data': 'Data', 'preco': 'Preço (R$)'},
                 markers=True
             )
             fig.update_layout(
                 xaxis_title="Data",
                 yaxis_title="Preço (R$)",
-                hovermode="x unified"
+                hovermode="x unified",
+                template="plotly_white"
             )
-            fig.update_traces(line_color='#1f77b4', marker_size=8)
+            fig.update_traces(line_color='#667eea', marker_size=10, line_width=3)
             
             st.plotly_chart(fig, use_container_width=True)
             
@@ -335,78 +564,16 @@ with tab_graficos:
             with col_stat1:
                 st.metric("Preço Atual", f"R$ {precos[-1]:.2f}")
             with col_stat2:
-                st.metric("Preço Mínimo", f"R$ {min(precos):.2f}")
+                st.metric("Mínimo", f"R$ {min(precos):.2f}")
             with col_stat3:
-                st.metric("Preço Máximo", f"R$ {max(precos):.2f}")
+                st.metric("Máximo", f"R$ {max(precos):.2f}")
             with col_stat4:
                 st.metric("Média", f"R$ {sum(precos)/len(precos):.2f}")
 
-# === ABA CADASTRO ===
-with tab_cadastro:
-    st.subheader("➕ Cadastro Individual")
-    
-    with st.form("form_cadastro", clear_on_submit=True):
-        ean_input = st.text_input(
-            "Código EAN (código de barras)",
-            placeholder="Ex: 7891234567890",
-            max_chars=13
-        )
-        
-        submitted = st.form_submit_button("Cadastrar Produto", use_container_width=True)
-        
-        if submitted:
-            if not ean_input or not ean_input.strip():
-                st.error("Por favor, informe o código EAN.")
-            elif not ean_input.isdigit():
-                st.error("O EAN deve conter apenas números.")
-            else:
-                sucesso, mensagem = adicionar_produto(ean_input.strip())
-                if sucesso:
-                    st.success(mensagem)
-                    st.rerun()
-                else:
-                    st.warning(mensagem)
-    
-    st.divider()
-    
-    # --- CADASTRO EM LOTE ---
-    st.subheader("📁 Cadastro em Lote")
-    st.markdown("Faça upload de um arquivo `.txt` ou `.csv` com um EAN por linha.")
-    
-    uploaded_file = st.file_uploader(
-        "Selecione o arquivo",
-        type=['txt', 'csv'],
-        help="Arquivo com um EAN por linha"
-    )
-    
-    if uploaded_file is not None:
-        try:
-            content = uploaded_file.getvalue().decode('utf-8')
-            eans = content.strip().split('\n')
-            eans = [ean.strip().replace(',', '') for ean in eans if ean.strip()]
-            
-            st.info(f"📋 {len(eans)} EANs encontrados no arquivo")
-            
-            # Preview
-            with st.expander("Ver EANs do arquivo"):
-                st.code('\n'.join(eans[:20]) + ('\n...' if len(eans) > 20 else ''))
-            
-            if st.button("Importar EANs", type="primary"):
-                adicionados, duplicados, erros = adicionar_produtos_em_lote(eans)
-                
-                st.success(f"✅ {adicionados} produtos adicionados")
-                if duplicados > 0:
-                    st.warning(f"⚠️ {duplicados} EANs já existiam e foram ignorados")
-                if erros:
-                    st.error(f"❌ {len(erros)} erros: {', '.join(erros[:5])}")
-                
-                st.rerun()
-                
-        except Exception as e:
-            st.error(f"Erro ao processar arquivo: {e}")
-
 # --- RODAPÉ ---
-st.divider()
-st.caption("💊 Monitor de Preços - Pague Menos | Ferramenta de Pricing")
-
-# Para executar: streamlit run app.py
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; padding: 1rem; color: #888;">
+    💊 <strong>Monitor de Preços</strong> • Pague Menos • Ferramenta de Pricing
+</div>
+""", unsafe_allow_html=True)
