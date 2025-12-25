@@ -6,7 +6,7 @@
       "preco_atual": 149.99,
       "preco_anterior": 149.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2025-12-24T22:17:22.537320-03:00",
+      "ultima_verificacao": "2025-12-25T03:26:52.363300-03:00",
       "status": "Monitorando",
       "historico": [
         {
@@ -68,6 +68,10 @@
         {
           "data": "2025-12-24T22:17:22.537331-03:00",
           "preco": 149.99
+        },
+        {
+          "data": "2025-12-25T03:26:52.363312-03:00",
+          "preco": 149.99
         }
       ]
     },
@@ -77,7 +81,7 @@
       "preco_atual": 44.99,
       "preco_anterior": 44.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2025-12-24T22:17:22.537371-03:00",
+      "ultima_verificacao": "2025-12-25T03:26:52.363352-03:00",
       "status": "Monitorando",
       "historico": [
         {
@@ -126,6 +130,10 @@
         },
         {
           "data": "2025-12-24T22:17:22.537375-03:00",
+          "preco": 44.99
+        },
+        {
+          "data": "2025-12-25T03:26:52.363356-03:00",
           "preco": 44.99
         }
       ]
