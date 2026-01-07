@@ -4,15 +4,11 @@
       "ean": "7500435146500",
       "nome": "Fralda Pampers Pants Ajuste Total XXG 60 Unidades",
       "preco_atual": 151.99,
-      "preco_anterior": 149.99,
-      "variacao": 1.33,
-      "ultima_verificacao": "2026-01-06T15:25:16.534883-03:00",
+      "preco_anterior": 151.99,
+      "variacao": 0.0,
+      "ultima_verificacao": "2026-01-06T22:19:37.529490-03:00",
       "status": "Monitorando",
       "historico": [
-        {
-          "data": "2025-12-30T09:35:08.523248-03:00",
-          "preco": 149.99
-        },
         {
           "data": "2025-12-30T15:25:20.301923-03:00",
           "preco": 149.99
@@ -128,6 +124,10 @@
         {
           "data": "2026-01-06T15:25:16.534894-03:00",
           "preco": 151.99
+        },
+        {
+          "data": "2026-01-06T22:19:37.529501-03:00",
+          "preco": 151.99
         }
       ]
     },
@@ -137,13 +137,9 @@
       "preco_atual": 44.99,
       "preco_anterior": 44.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2026-01-06T15:25:16.534933-03:00",
+      "ultima_verificacao": "2026-01-06T22:19:37.529541-03:00",
       "status": "Monitorando",
       "historico": [
-        {
-          "data": "2025-12-30T09:35:08.523285-03:00",
-          "preco": 44.99
-        },
         {
           "data": "2025-12-30T15:25:20.301965-03:00",
           "preco": 44.99
@@ -258,6 +254,10 @@
         },
         {
           "data": "2026-01-06T15:25:16.534937-03:00",
+          "preco": 44.99
+        },
+        {
+          "data": "2026-01-06T22:19:37.529545-03:00",
           "preco": 44.99
         }
       ]
