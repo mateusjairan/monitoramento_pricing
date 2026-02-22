@@ -6,13 +6,9 @@
       "preco_atual": 142.99,
       "preco_anterior": 142.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2026-02-22T09:39:08.993333-03:00",
+      "ultima_verificacao": "2026-02-22T15:28:45.785346-03:00",
       "status": "Monitorando",
       "historico": [
-        {
-          "data": "2026-02-15T03:45:04.630568-03:00",
-          "preco": 126.99
-        },
         {
           "data": "2026-02-15T09:39:37.564315-03:00",
           "preco": 126.99
@@ -128,6 +124,10 @@
         {
           "data": "2026-02-22T09:39:08.993344-03:00",
           "preco": 142.99
+        },
+        {
+          "data": "2026-02-22T15:28:45.785358-03:00",
+          "preco": 142.99
         }
       ]
     },
@@ -137,7 +137,7 @@
       "preco_atual": 44.99,
       "preco_anterior": 44.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2026-02-22T09:39:08.993380-03:00",
+      "ultima_verificacao": "2026-02-22T15:28:45.785394-03:00",
       "status": "Não Encontrado",
       "historico": [
         {
