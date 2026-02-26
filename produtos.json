@@ -6,8 +6,8 @@
       "preco_atual": 142.99,
       "preco_anterior": 142.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2026-02-26T03:54:43.709704-03:00",
-      "status": "Monitorando",
+      "ultima_verificacao": "2026-02-26T09:56:06.178000-03:00",
+      "status": "Não Encontrado",
       "historico": [
         {
           "data": "2026-02-18T15:46:53.252088-03:00",
@@ -137,7 +137,7 @@
       "preco_atual": 44.99,
       "preco_anterior": 44.99,
       "variacao": 0.0,
-      "ultima_verificacao": "2026-02-26T03:54:43.709750-03:00",
+      "ultima_verificacao": "2026-02-26T09:56:06.178025-03:00",
       "status": "Não Encontrado",
       "historico": [
         {
